@@ -1,0 +1,408 @@
+# Interactive maps with R
+
+[Code for this lesson](R/14_gis.R)
+
+#### Learning objectives: {-}
+
+After this tutorial, you will be able to:
+
+* Create an interactive map in `R` using the `leaflet` package. 
+
+
+```{r map-obj, echo = FALSE}
+library(dplyr)
+library(leaflet)
+library(htmlwidgets)
+
+ctry_poly = readRDS("data/GIS/country_polygons/USA/gadm36_USA_1_sp.rds")
+events = read.csv("data/sample/event_short.csv", stringsAsFactors = FALSE)
+animals = read.csv("data/sample/animal_short.csv", stringsAsFactors = FALSE)
+animals = dplyr::left_join(animals, events, by = "GAINS4_EventID")
+
+sites = events %>%
+    group_by(SiteName, StateProv, District, SiteLatitude, SiteLongitude) %>%
+    summarise(n = n())
+
+
+# More detailed popups
+sites$site_info = paste0("Site name: ", sites$SiteName, "<br>",
+                         "No. of events: ", sites$n, "<br>",
+                   "StateProv: ", sites$StateProv, "<br>",
+                   "District: ", sites$District, "<br>",
+                   "Latitude: ", sites$SiteLatitude, "<br>",
+                   "Longitude: ", sites$SiteLongitude)
+
+map = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap,
+                     group = "NatGeo") %>%
+    addPolygons(data = ctry_poly,
+                color = "green",
+                group = "USA regions") %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     weight = 3,
+                     radius = 4,
+                     opacity = 0.7,
+                     popup = ~site_info,
+                     group = "Sites") %>%
+    addCircleMarkers(data = animals, lng = ~SiteLongitude, lat = ~SiteLatitude,
+                     weight = 2,
+                     radius = 4,
+                     group = "Animal clusters",
+                     clusterOptions = markerClusterOptions())
+
+
+map = map %>%
+    addLayersControl(
+    overlayGroups = c("USA regions", "Sites", "Animal clusters"),
+    options = layersControlOptions(collapsed = FALSE))
+
+
+map
+```
+
+<br><br>
+
+#### Why interactive maps? {-}
+
+While static maps are useful for reports and presentations, interactive maps 
+allow you to pan around and zoom into any part of a your geographic dataset using
+a web map to put your data into context. 
+
+Interactive maps also provide options for different interactivity types, 
+for e.g. popups which provide information about your data when clicked on the map. 
+
+The package we use for making interactive maps is called `Leaflet`, and it has an
+excellent documentation website: check it out [here](https://rstudio.github.io/leaflet/).
+
+<!-- ```{r gis-with-r-slides, echo = FALSE} -->
+<!-- knitr::include_url("https://nistara.github.io/predict-conf_slides/slides/gis-with-r/gis-with-r.html#1") -->
+<!-- ``` -->
+
+
+<!-- [Link to slides](https://nistara.github.io/predict-conf_slides/slides/gis-with-r/gis-with-r.html#1) -->
+
+```{r setup, include=FALSE}
+library(knitr)
+```
+
+#### R packages needed for this session {-}
+
+```{r , messages = FALSE}
+library(dplyr)
+library(leaflet)
+library(htmlwidgets)
+```
+
+#### Reading in data {-}
+
+```{r get-data}
+events = read.csv("data/sample/event_short.csv", stringsAsFactors = FALSE)
+animals = read.csv("data/sample/animal_short.csv", stringsAsFactors = FALSE)
+```
+
+#### Check what we just imported {-}
+```{r, eval = FALSE}
+# Check what we have:
+head(events)
+
+# What's the structure of our event data?
+str(events)
+```
+
+Similarly, for the `animals` data:
+
+```{r, eval = FALSE}
+head(animals)
+
+str(animals)
+```
+
+
+```{r join, echo = FALSE}
+# *********
+# IMPORTANT: YOU MAY NOT NEED THE LINE OF CODE BELOW WITH YOUR DATA.
+# RUN str(animals) TO SEE IF YOU HAVE SiteLatitude and SiteLongitude IN YOUR
+# ANIMAL DATSET.
+# IF YES, YOU DON'T NEED TO JOIN.
+# I MADE A SMALL SUBSET FOR THIS TUTORIAL, SO I NEED TO JOIN!! 
+animals = dplyr::left_join(animals, events, by = "GAINS4_EventID")
+# *********
+```
+
+#### Getting unique sites for mapping (to avoid overlapping) {-}
+
+```{r sites}
+
+sites = events %>%
+    group_by(SiteName, StateProv, District, SiteLatitude, SiteLongitude) %>%
+    summarise(n = n())
+
+```
+
+#### Starting with leaflet {-}
+
+The leaflet package enables us to create beautiful interactive maps in R. 
+
+To begin, let's create an empty map. See what running the following command 
+gives you.
+
+```{r empty-map}
+leaflet() %>% addTiles()
+```
+<br>
+
+
+Use a more aesthetic base map, similar to the ones we used in the QGIS session. To see
+all your options fo extra base maps, see [here](http://leaflet-extras.github.io/leaflet-providers/preview/index.html).
+
+```{r base-map}
+leaflet() %>% addProviderTiles(providers$Esri.NatGeoWorldMap)
+```
+
+<br>
+
+That's better. 
+
+
+#### Map your data {-}
+
+Now, let's add our site data. We do that with the `addCircleMarkers` function.
+If you want to see what arguments it needs, run `?addCircleMarkers` in your R console.
+
+```{r site-map}
+map_sites = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude)
+
+map_sites
+```
+
+<br> 
+
+Now adjust the size of the site circle markers. 
+
+```{r change-size}
+
+map_sites = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     radius = 4)
+
+map_sites
+
+```
+
+<br>
+
+#### Show popups {-}
+
+How about we add some popup information? If you click on a point, a popup will
+display whatever information you set it up to show. 
+
+```{r popup}
+
+map_sites = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     radius = 4,
+                     popup = ~SiteName)
+
+map_sites
+
+```
+
+<br>
+
+For the above, we set it so the Site Name would pop up. We can add much more
+information from our dataset. 
+
+```{r more-popup}
+# More detailed popups
+sites$site_info = paste0("Site name: ", sites$SiteName, "<br>",
+                   "StateProv: ", sites$StateProv, "<br>",
+                   "District: ", sites$District, "<br>",
+                   "Latitude: ", sites$SiteLatitude, "<br>",
+                   "Longitude: ", sites$SiteLongitude)
+
+
+map_site_info = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     radius = 4,
+                     popup = ~site_info)
+
+map_site_info
+
+```
+
+<br>
+
+#### Adding a country polygon {-}
+
+To help put our site locations into context, we import a polygon layer for our
+country, and display it below the site data. 
+
+```{r ctry-poly}
+
+ctry_poly = readRDS("data/GIS/country_polygons/USA/gadm36_USA_1_sp.rds")
+
+map_ctry_poly = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addPolygons(data = ctry_poly)
+
+map_ctry_poly
+
+# change the color of the polygon
+map_ctry_poly = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addPolygons(data = ctry_poly,
+                color = "green")
+
+map_ctry_poly
+
+```
+
+<br>
+
+#### Put it all together {-}
+
+```{r ctry-poly-data}
+
+map = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap) %>%
+    addPolygons(data = ctry_poly,
+                color = "green") %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     weight = 3,
+                     radius = 4,
+                     opacity = 0.7,
+                     popup = ~site_info)
+
+map
+
+```
+
+#### Give options for turning layers on/off {-}
+
+```{r toggle-layers, cache = TRUE}
+
+
+map = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap,
+                     group = "NatGeo") %>%
+    addPolygons(data = ctry_poly,
+                color = "green",
+                group = "USA regions") %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     weight = 3,
+                     radius = 4,
+                     opacity = 0.7,
+                     popup = ~site_info,
+                     group = "Sites")
+
+
+map = map %>%
+    addLayersControl(
+    overlayGroups = c("USA regions", "Sites"),
+    options = layersControlOptions(collapsed = FALSE))
+
+map
+
+```
+<br>
+
+#### Add the animal sampling data {-}
+
+We add the animal data and use the `clusterOptions` argument so that
+leaflet aggregates the numbers for us.
+
+```{r animal-map}
+
+# first, let's map animals as is (without sites)
+map_animals = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap,
+                     group = "NatGeo") %>%
+    addPolygons(data = ctry_poly,
+                color = "green",
+                group = "USA regions") %>%
+    addCircleMarkers(data = animals, lng = ~SiteLongitude, lat = ~SiteLatitude,
+                     weight = 2,
+                     radius = 4,
+                     group = "Animal clusters")
+
+map_animals
+
+
+# now, let's try the aggregation argument `clusterOptions`, which enables us to
+# show numbers of animals
+map_animals = leaflet() %>% 
+    addProviderTiles(providers$Esri.NatGeoWorldMap,
+                     group = "NatGeo") %>%
+    addPolygons(data = ctry_poly, group = "USA regions") %>%
+    addCircleMarkers(data = animals, lng = ~SiteLongitude, lat = ~SiteLatitude,
+                     weight = 2,
+                     radius = 4,
+                     group = "Animal clusters",
+                     clusterOptions = markerClusterOptions())
+    
+map_animals
+
+
+# Finally, let's add our animal data to the map with event data in it
+# ==============================================================================
+map = leaflet() %>%
+    addProviderTiles(providers$Esri.NatGeoWorldMap,
+                     group = "NatGeo") %>%
+    addPolygons(data = ctry_poly,
+                color = "green",
+                group = "USA regions") %>%
+    addCircleMarkers(data = sites,
+                     lng = ~SiteLongitude,
+                     lat = ~SiteLatitude,
+                     weight = 3,
+                     radius = 4,
+                     opacity = 0.7,
+                     popup = ~site_info,
+                     group = "Sites") %>%
+    addCircleMarkers(data = animals, lng = ~SiteLongitude, lat = ~SiteLatitude,
+                     weight = 2,
+                     radius = 4,
+                     group = "Animal clusters",
+                     clusterOptions = markerClusterOptions())
+
+
+map = map %>%
+    addLayersControl(
+    overlayGroups = c("USA regions", "Sites", "Animal clusters"),
+    options = layersControlOptions(collapsed = FALSE))
+
+
+map
+
+```
+
+
+#### Now, save your map {-}
+
+```{r save-map}
+
+saveWidget(map, "map_sites_animal.html")
+
+```
+
+
+

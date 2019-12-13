@@ -1,0 +1,22 @@
+--- 
+title: "Intro to R, RStudio and interactive mapping"
+site: bookdown::bookdown_site
+output: 
+  bookdown::gitbook:
+    split_by: section
+    config:
+      sharing: null
+      edit: null
+documentclass: book
+bibliography: [book.bib, packages.bib]
+biblio-style: apalike
+link-citations: yes
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# {-}
+
+This website contains some of my materials from the 2019 Predict conference.
+
+
+

@@ -1,0 +1,16 @@
+base
+knitr
+dplyr
+leaflet
+sp
+raster
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+stringr
+forcats
+htmlwidgets
+here
