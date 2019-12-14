@@ -17,6 +17,6 @@ description: "This is a minimal example of using the bookdown package to write a
 
 # {-}
 
-Materials from the 2019 PREDICT Data Conference.
+Some materials from the 2019 PREDICT Data Conference.
 
 
