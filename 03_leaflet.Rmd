@@ -4,12 +4,10 @@
 
 #### Learning objectives: {-}
 
-After this tutorial, you will be able to:
-
-* Create an interactive map in `R` using the `leaflet` package. 
+After this tutorial, you will be able to create an interactive map in `R` using the `leaflet` package. 
 
 
-```{r map-obj, echo = FALSE}
+```{r map-obj, echo = FALSE, messages = FALSE}
 library(dplyr)
 library(leaflet)
 library(htmlwidgets)
