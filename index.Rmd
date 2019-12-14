@@ -1,5 +1,5 @@
 --- 
-title: "Intro R and Iteractive Mapping"
+title: "Intro R and Interactive Mapping"
 site: bookdown::bookdown_site
 author: "Nistara Randhawa"
 output: 
