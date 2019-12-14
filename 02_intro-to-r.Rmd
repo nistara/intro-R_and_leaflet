@@ -319,7 +319,7 @@ To make an R project corresponding to the conference folder (`2019_predict_confe
 #### You've now got a basic outlook of how to work with R and RStudio {-}
 
 
-## Helpful commands for R {-}
+## One-page summary of R commands {-}
 
 ```{r echo = FALSE}
 knitr::include_url("extras/One_page_summaRy.pdf")
